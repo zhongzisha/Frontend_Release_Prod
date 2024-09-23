@@ -48,7 +48,7 @@ DATA_DIR = f'data_HiDARE_PLIP_20240208'
 ST_ROOT = f'{DATA_DIR}/assets/ST_kmeans_clustering/analysis/one_patient_top_128'
 project_names = ['TCGA-COMBINED', 'KenData_20240814', 'ST']  # do not change the order
 project_start_ids = {'TCGA-COMBINED': 0, 'KenData_20240814': 159011314, 'ST': 281115587}
-backbones = ['HERE_CONCH', 'HERE_PLIP', 'HERE_ProvGigaPath']
+backbones = ['HERE_CONCH', 'HERE_UNI'] # choices: 'HERE_CONCH', 'HERE_PLIP', 'HERE_ProvGigaPath', 'HERE_UNI'
 
 def load_cfg_from_json(json_file):
     with open(json_file, "r", encoding="utf-8") as reader:
@@ -158,26 +158,32 @@ for search_backbone in backbones:
         )
         models_dict[search_backbone]['attention_model'] = AttentionModel(backbone='ProvGigaPath')
         models_dict[search_backbone]['state_dict'] = torch.load(f"{DATA_DIR}/assets/snapshot_39_HERE_ProvGigaPath.pt", map_location='cpu', weights_only=True)
+    elif search_backbone == 'HERE_UNI':
+        models_dict[search_backbone]['feature_extractor'] = timm.create_model(
+            "vit_large_patch16_224", img_size=224, patch_size=16, init_values=1e-5, num_classes=0, dynamic_img_size=True
+        )
+        models_dict[search_backbone]['feature_extractor'].load_state_dict(torch.load(f"{DATA_DIR}/assets/UNI_pytorch_model.bin", map_location="cpu", weights_only=True), strict=True)
+        models_dict[search_backbone]['image_processor_or_transform'] = create_transform(**resolve_data_config(models_dict[search_backbone]['feature_extractor'].pretrained_cfg, model=models_dict[search_backbone]['feature_extractor']))
+        models_dict[search_backbone]['attention_model'] = AttentionModel(backbone='UNI')
+        models_dict[search_backbone]['state_dict'] = torch.load(f"{DATA_DIR}/assets/snapshot_58_HERE_UNI.pt", map_location='cpu', weights_only=True)
+    
     models_dict[search_backbone]['feature_extractor'].eval()
     models_dict[search_backbone]['attention_model'].load_state_dict(models_dict[search_backbone]['state_dict']['MODEL_STATE'], strict=False)
     models_dict[search_backbone]['attention_model'].eval()
 
 print('after loading backbones ', psutil.virtual_memory().used/1024/1024/1024, "GB")
 
-faiss_Ms = [32]
-faiss_nlists = [128]
 faiss_indexes = {}
+faiss_types = ['faiss_IndexHNSWFlat_m32_IVFPQ_nlist128_m8', 'faiss_IndexFlatL2']
 for backbone in backbones:
-    faiss_indexes[backbone] = {
-        f'faiss_IndexHNSWFlat_m32_IVFPQ_nlist128_m8': {
-            'KenData_20240814': faiss.read_index(f"{DATA_DIR}/assets/faiss_bins/all_data_feat_before_attention_feat_faiss_IndexHNSWFlat_m32_IVFPQ_nlist128_m8_KenData_20240814_{backbone}.bin"),
-            'TCGA-COMBINED': faiss.read_index(f"{DATA_DIR}/assets/faiss_bins/all_data_feat_before_attention_feat_faiss_IndexHNSWFlat_m32_IVFPQ_nlist128_m8_TCGA-COMBINED_{backbone}.bin"),
-            'ST': faiss.read_index(f"{DATA_DIR}/assets/faiss_bins/all_data_feat_before_attention_feat_faiss_IndexHNSWFlat_m32_IVFPQ_nlist128_m8_ST_{backbone}.bin")
-        },
-        'faiss_IndexFlatL2': {
-            'ST': faiss.read_index(f"{DATA_DIR}/assets/faiss_bins/all_data_feat_before_attention_feat_faiss_IndexFlatL2_ST_{backbone}.bin")
-        }
-    }
+    faiss_indexes[backbone] = {}
+    for faiss_type in faiss_types:
+        faiss_indexes[backbone][faiss_type] = {}
+        for project_name in project_names:
+            faiss_bin_filename = f"{DATA_DIR}/assets/faiss_bins/all_data_feat_before_attention_feat_{faiss_type}_{project_name}_{backbone}.bin"
+            if os.path.exists(faiss_bin_filename):
+                faiss_indexes[backbone][faiss_type][project_name] = faiss.read_index(faiss_bin_filename)
+
 print('after loading faiss indexes ', psutil.virtual_memory().used/1024/1024/1024, "GB")
 
 with open(f'{DATA_DIR}/assets/randomly_1000_data_with_PLIP_ProvGigaPath_CONCH_20240814.pkl', 'rb') as fp: # with HERE_ProvGigaPath, with CONCH, random normal distribution
@@ -199,10 +205,6 @@ for project_name in project_names:
         txn_i = env_i.begin(write=False)
         txns[project_name].append(txn_i)
 
-# app = Flask(__name__,
-#             static_url_path='',
-#             static_folder='',
-#             template_folder='')
 
 def new_web_annotation2(cluster_label, min_dist, x, y, w, h, annoid_str):
     anno = {
@@ -319,6 +321,8 @@ def get_query_embedding(img_urls, resize=0, search_backbone='HERE_PLIP'):
     sizex, sizey = 256, 256
     # if 'CONCH' in search_backbone:
     #     sizex, sizey = 512, 512
+    image_urls_all = {}
+    results_dict = {}
     for img_url in img_urls:
         if img_url[:4] == 'http':
             image = Image.open(img_url.replace(
@@ -330,8 +334,11 @@ def get_query_embedding(img_urls, resize=0, search_backbone='HERE_PLIP'):
         else:
             image = Image.open(img_url).convert('RGB')
 
-        W, H = image.size        
+        W, H = image.size
         minWorH = min(min(W, H), minWorH)
+        if W>2048 or H>2048 or W<128 or H<128:
+            return None, image_urls_all, results_dict, minWorH
+
         if 0 < resize:
             resize_scale = 1. / 2**resize
             newW, newH = int(W*resize_scale), int(H*resize_scale)
@@ -346,11 +353,9 @@ def get_query_embedding(img_urls, resize=0, search_backbone='HERE_PLIP'):
 
     image_patches = [
         patch for patches in image_patches_all for patch in patches]
-    image_urls_all = {}
-    results_dict = {}
     with torch.no_grad():
 
-        if search_backbone in ['HERE_PLIP', 'HERE_ProvGigaPath', 'HERE_CONCH']:
+        if search_backbone in ['HERE_PLIP', 'HERE_ProvGigaPath', 'HERE_CONCH', 'HERE_UNI']:
             if search_backbone == 'HERE_PLIP':
                 images = models_dict[search_backbone]['image_processor_or_transform'](images=image_patches, return_tensors='pt')['pixel_values']
                 feat_after_encoder_feat = models_dict[search_backbone]['feature_extractor'].get_image_features(images).detach()
@@ -375,7 +380,14 @@ def get_query_embedding(img_urls, resize=0, search_backbone='HERE_PLIP'):
                     models_dict[search_backbone]['state_dict']['MODEL_STATE']['attention_net.0.bias']
                 # get the attention scores
                 results_dict = models_dict[search_backbone]['attention_model'](feat_after_encoder_feat.unsqueeze(0))
-
+            elif search_backbone == 'HERE_UNI':
+                images = torch.stack([models_dict[search_backbone]['image_processor_or_transform'](example) for example in image_patches])
+                feat_after_encoder_feat = models_dict[search_backbone]['feature_extractor'](images).detach()
+                # extract feat_before_attention_feat
+                embedding = feat_after_encoder_feat @ models_dict[search_backbone]['state_dict']['MODEL_STATE']['attention_net.0.weight'].T + \
+                    models_dict[search_backbone]['state_dict']['MODEL_STATE']['attention_net.0.bias']
+                # get the attention scores
+                results_dict = models_dict[search_backbone]['attention_model'](feat_after_encoder_feat.unsqueeze(0))
             # weighted the features using attention scores
             embedding = torch.mm(results_dict['A'], embedding)
             # embedding = results_dict['global_feat'].detach().numpy()
@@ -424,6 +436,10 @@ def image_search_main(params):
     if search_method == 'faiss_IndexFlatL2':
         search_project = 'ST'
 
+    for key, value in params.items():
+        if key != 'img_urls':
+            print(key, value)
+
     start = time.perf_counter()
 
     query_embedding, images_shown_urls, results_dict, minWorH = \
@@ -447,8 +463,7 @@ def image_search_main(params):
     
     random1000_mean, random1000_std, random1000_dists = compute_mean_std_cosine_similarity_from_random1000(
         query_embedding, search_project=search_project, search_backbone=params['search_backbone'])
-    print('D', D)
-    print('random1000_mean', random1000_mean)
+
     final_response = {}
     final_response1 = {}
     # iinds = np.argsort(I)
@@ -473,9 +488,6 @@ def image_search_main(params):
     gc.collect()
 
     index_rank_scores = np.arange(1, 1+len(D))[::-1]
-    print('index_rank_scores', index_rank_scores)
-    print('I', I)
-    print('infos', infos.keys())
     for ii, (score, ind) in enumerate(zip(D, I)):
 
         if ind not in infos:
@@ -493,7 +505,6 @@ def image_search_main(params):
                 '_pvalue': len(np.where(random1000_dists <= score)[0]) / len(random1000_dists)}
         project_name = project_names[proj_id]
         x0, y0 = int(x), int(y)
-        # image_id = '{}_{}_x{}_y{}'.format(project_name, slide_name, x, y)
         image_id = '{}_{}_x{:d}_y{:d}'.format(proj_id, svs_prefix_id, x, y)
         image_name = '{}_x{}_y{}'.format(slide_name, x, y)
 
@@ -577,14 +588,11 @@ def image_search_main(params):
         final_response[k]['_random1000_std'] = float(random1000_std)
         final_response[k]['_time_elapsed_ms'] = float(time_elapsed_ms)
     sort_inds = np.argsort(zscore_sum_list)[::-1].tolist()
-    print('zscore_sum_list', zscore_sum_list)
-    print('sort_inds', sort_inds)
     allkeys = list(final_response.keys())
     ranks = {rank: allkeys[ind] for rank, ind in enumerate(sort_inds)} # sorted by zscore_sum descend order
-    print('ranks', ranks)
 
     # prediction
-    if params['search_backbone'] in ['HERE_PLIP', 'HERE_ProvGigaPath', 'HERE_CONCH']:
+    if params['search_backbone'] in ['HERE_PLIP', 'HERE_ProvGigaPath', 'HERE_CONCH', 'HERE_UNI']:
         table_str = [
             '<table border="1"><tr><th>task</th><th>prediction</th></tr>']
         for k,v in models_dict[params['search_backbone']]['attention_model'].classification_dict.items():
@@ -603,11 +611,3 @@ def image_search_main(params):
     return {'current': 100, 'total': 100, 'status': 'Task completed!',
             'result': {'coxph_html_dict': coxph_html_dict, 'response': final_response, 'ranks': ranks, 'pred_str': pred_str,
             'images_shown_urls': images_shown_urls, 'minWorH': minWorH}}
-
-# @app.route('/image_search', methods=['POST', 'GET'])
-# def image_search():
-#     params = request.get_json()
-#     return image_search_main(params)
-
-
-# app.wsgi_app = ProxyFix(app.wsgi_app)

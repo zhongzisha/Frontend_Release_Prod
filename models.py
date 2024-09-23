@@ -72,7 +72,8 @@ BACKBONE_DICT = {
     'MobileNetV3': 1280,
     'mobilenetv3': 1280,
     'ProvGigaPath': 1536,
-    'CONCH': 512
+    'CONCH': 512,
+    'UNI': 1024
 }
 
 # survival not shared, all other shared

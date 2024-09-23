@@ -108,6 +108,8 @@
                     <input type="text" id="gene_names" value="SERPING1">
                     <label for="cohensd_thres">Cohensd Threshold: </label>
                     <input type="text" id="cohensd_thres" value="1" type="number">
+                    <label for="pvalue_corr_thres">P-value(corrected) Threshold: </label>
+                    <input type="text" id="pvalue_corr_thres" value="0.1" type="number">
                     <button onclick="do_search_click_v2(this)" id="btn_search">Search</button>
                     <button id="btn_show_coxph" hidden>Show CoxPH Results</button>
                     <br />
@@ -503,7 +505,7 @@
                     for (let i = 0; i < ids.length; i++) {
                         let id_name = ids[i];
                         let button_str = `<button id="sr_${i+1}_button" onclick="show_item(this,${id_name});">Show image</button>`;
-                        table_str += `<tr id="sr_${id_name}"><td>${all_items['ST_prefix'][id_name]}</td><td>${all_items['cluster_label'][id_name]}</td><td>${all_items['cohensd'][id_name].toFixed(2)}</td><td>${all_items['pvalue'][id_name].toFixed(2)}</td><td>${all_items['pvalue_corrected'][id_name].toFixed(2)}</td><td>${all_items['zscore'][id_name].toFixed(2)}</td><td>${all_items['gene_symbol'][id_name]}</td><td>${button_str}</td>`;
+                        table_str += `<tr id="sr_${id_name}"><td>${all_items['ST_prefix'][id_name]}</td><td>${all_items['cluster_label'][id_name]}</td><td>${all_items['cohensd'][id_name].toFixed(2)}</td><td>${all_items['pvalue'][id_name].toExponential(2)}</td><td>${all_items['pvalue_corrected'][id_name].toExponential(2)}</td><td>${all_items['zscore'][id_name].toFixed(2)}</td><td>${all_items['gene_symbol'][id_name]}</td><td>${button_str}</td>`;
                     }
                     table_str += '</table>';
                     container.innerHTML = table_str;
@@ -1223,8 +1225,9 @@
 
                     let gene_names = document.getElementById("gene_names").value;
                     let cohensd_thres = document.getElementById("cohensd_thres").value;
+                    let pvalue_corr_thres = document.getElementById("pvalue_corr_thres").value;
 
-                    let params_dict1 = { 'gene_names': gene_names, 'cohensd_thres': cohensd_thres };
+                    let params_dict1 = { 'gene_names': gene_names, 'cohensd_thres': cohensd_thres, 'pvalue_corr_thres': pvalue_corr_thres };
 
                     do_search_v2(params_dict1);
                 }

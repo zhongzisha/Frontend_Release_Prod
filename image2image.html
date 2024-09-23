@@ -135,7 +135,7 @@
                 <div class="divcontainer1" id="divcontainer1">
                     <div id="divcontainer1Left">
                         <div>
-                        <label for="file">1. Choose one or more images (jpeg/png/bmp):</label>
+                        <label for="file">1. Choose one or more images (jpeg/png/bmp): </label>
                         <input type="file" id="file" accept="image/png, image/jpeg, image/bmp" onchange="readURL(this);" multiple />
                         <div>or click an example image: 
                             <a href="#" onclick="javascript:load_example_img(0);">1</a>,&nbsp;
@@ -165,8 +165,9 @@
                         <label for="search_backbone">4. backbone: </label>
                         <select name="search_backbone" id="search_backbone">
                             <option value="HERE_CONCH" selected>HERE_CONCH</option>
-                            <option value="HERE_ProvGigaPath">HERE_ProvGigaPath</option>
-                            <option value="HERE_PLIP">HERE_PLIP</option>
+                            <option value="HERE_UNI">HERE_UNI</option>
+                            <!-- <option value="HERE_ProvGigaPath">HERE_ProvGigaPath</option>
+                            <option value="HERE_PLIP">HERE_PLIP</option> -->
                         </select>
                         </div>
                         <div>
@@ -319,9 +320,49 @@
                     document.getElementById("status_div2").innerText = "";
                     progressBar.style.width = "0%";
                     params_dict['resize'] = 0;
+                    valid_images = [1];
                 }
 
 
+                function readURL_i_bak(input, ii, conainer_div) {
+                    if (input.files && input.files[ii]) {
+
+                        const img_i = document.createElement("IMG");
+                        img_i.id = `query_img_${ii}`;
+                        img_i.style.cssText = "height:96px;width:96px;margin:1px";
+                        img_i.addEventListener("dblclick", (event)=>{ 
+                                                let urlll = query_img_shown_urls[`query_img_${ii}`];
+                                                if (urlll) {
+                                                var popup2 = window.open('', '_blank', 'toolbar=0,location=0,menubar=0,width=600px,height=600px');
+                                                popup2.document.write('<div style="overflow: auto">');
+                                                popup2.document.write(`<img src="${urlll}" alt="" style="height: 95%"/>`);
+                                                popup2.document.write('</div>');
+                                                }
+
+                                            }); 
+
+                        var reader = new FileReader(); // Creating reader instance from FileReader() API
+                        reader.addEventListener("load", function () { // Setting up base64 URL on image
+                            img_i.src = reader.result;
+                            var tmpimage = new Image();
+                            tmpimage.onload = function() {
+                                var im_h = this.height;
+                                var im_w = this.width;
+                                img_i.original_h = im_h;
+                                img_i.original_w = im_w;
+                                console.log(`im: ${im_h}, ${im_w}`)
+                            }
+                            tmpimage.src = img_i.src;
+                        }, false);
+                        reader.readAsDataURL(input.files[ii]); // Converting file into data URL
+                        conainer_div.appendChild(img_i);
+                        return 1;
+                    }
+                }
+
+                var valid_images = null;
+                var valid_image_heights = null;
+                var valid_image_widths = null;
                 function readURL_i(input, ii, conainer_div) {
                     if (input.files && input.files[ii]) {
 
@@ -342,12 +383,22 @@
                         var reader = new FileReader(); // Creating reader instance from FileReader() API
                         reader.addEventListener("load", function () { // Setting up base64 URL on image
                             img_i.src = reader.result;
+                            var tmpimage = new Image();
+                            tmpimage.onload = function() {
+                                var im_h = this.height;
+                                var im_w = this.width;
+                                valid_image_heights[ii] = im_h;
+                                valid_image_widths[ii] = im_w;
+                                if (im_h<256||im_h>2048||im_w<256||im_w>2048) {
+                                    valid_images[ii] = 0;
+                                }
+                            }
+                            tmpimage.src = img_i.src;
                         }, false);
                         reader.readAsDataURL(input.files[ii]); // Converting file into data URL
                         conainer_div.appendChild(img_i);
                     }
                 }
-
                 function readURL(input) {
 
                     query_img_shown_urls = {};
@@ -372,9 +423,17 @@
                     query_images_div.innerHTML = '<div style="style="text-align: center; width: 50%;">You selected the following image(s) to search:</div><br/>';
                     var boxContainer = document.createElement("div");
                     boxContainer.style.cssText = "width: 100%; height: 100px; float: left; overflow: auto";
+
+                    valid_images = new Array(input.files.length);
+                    valid_images.fill(1);
+                    valid_image_heights = new Array(input.files.length);
+                    valid_image_widths = new Array(input.files.length);
+                    valid_image_heights.fill(0);
+                    valid_image_widths.fill(0);
                     for (let i = 0; i < input.files.length; ++i) {
                         readURL_i(input, i, boxContainer);
                     }
+
                     query_images_div.appendChild(boxContainer);
                     // Append the right div to the container
                     container11.appendChild(query_images_div);
@@ -754,6 +813,7 @@
                         success: function (resultdata, status, request) {
                             if ('result' in resultdata) {
                                     response = resultdata['result'];
+                                    if (Object.keys(response['response']).length > 0) {
                                     add_items_to_right_column(response['response'], response['ranks'], viewer11, viewer21, anno11, 'viewer41', 'status_div2');
                                     document.getElementById(the_first_patch_id).click();
                                     //await new Promise(r => setTimeout(r, 3000));
@@ -828,6 +888,9 @@
                                     //     let viewport_coord = viewer11.viewport.imageToViewportCoordinates(the_first_x, the_first_y);
                                     //     viewer11.viewport.panTo(viewport_coord);
                                     // }
+                                    } else {
+                                        alert('image too big. ideal image size: from 256x256 to 2048x2048.')
+                                    }
                                 }
 
 
@@ -903,8 +966,19 @@
                         params_dict['search_method'] = search_method;
                         params_dict['search_backbone'] = search_backbone;
 
+                        const allEqual = arr => arr.every(val => val === 1);
                         const count = files.length;
-                        if (count > 0) { 
+                        if( count > 5) {
+                            alert("Please select at most 5 images.")
+                        } else if (!allEqual(valid_images)) {
+                            var message = "Please make sure the image height or width is in the range of 256 to 2048 pixels. \n\nYour input is:\n";
+                            for (var i = 0; i < valid_image_heights.length; ++i) {
+                                message += `input ${i}: (height=${valid_image_heights[i]}, width=${valid_image_widths[i]})\n`;
+                            }
+                            alert(message);
+                            //alert("Please make sure the image height or width is in the range of 256 to 2048 pixels. ")
+                        } else if ((count>=1)&&(count<=5)) { 
+                            console.log("count:", count);
                             example_image = null;
                             params_dict['img_urls'] = [];
                             params_dict['filenames'] = [];
@@ -932,6 +1006,7 @@
                         } else if (example_image !== null) { 
                             params_dict['img_urls'] = [example_image];
                             params_dict['filenames'] = [example_image];
+                            valid_images = [1];
                             do_search(params_dict);
                         } else {
                             alert("Please select at least one image as input.");

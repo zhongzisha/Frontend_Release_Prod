@@ -129,9 +129,11 @@ def gene_search():
 
     gene_names = []
     cohensd_thres = None
+    pvalue_corr_thres = None
     try:
         gene_names = [vv for vv in params['gene_names'].split(',') if len(vv) > 0]
         cohensd_thres = float(params['cohensd_thres'])
+        pvalue_corr_thres = float(params['pvalue_corr_thres'])
     except:
         pass
 
@@ -141,13 +143,16 @@ def gene_search():
     if cohensd_thres == None:
         cohensd_thres = 1.0
         status += 'Cohensd values should be float. Set it to 1.0. \n'
+    if pvalue_corr_thres == None:
+        pvalue_corr_thres = 0.1
+        status += 'P-value(corrected) should be float. Set it to 0.1. \n'
 
     db_conn, db_cursor = get_db()
     hidare_table_str = f'cluster_result_table_20240814 as a, gene_table_20240814 as b, '\
         f'cluster_table_20240814 as c, cluster_setting_table_20240814 as d, st_table_20240814 as e'
 
     if len(gene_names) == 0:
-        if cohensd_thres is None:
+        if cohensd_thres is None or pvalue_corr_thres is None:
             sql = f'select a.*, b.symbol, d.cluster_setting, e.prefix, c.cluster_label, c.cluster_info, f.note from {hidare_table_str} '\
                 'where a.gene_id = b.id and c.id = a.c_id and c.cs_id = d.id and '\
                     'c.st_id = e.id order by a.cohensd desc limit 100;'
@@ -159,16 +164,16 @@ def gene_search():
 
         else:
             sql = f'select a.*, b.symbol, d.cluster_setting, e.prefix, c.cluster_label, c.cluster_info from {hidare_table_str} '\
-                'where a.cohensd > %s and a.gene_id = b.id and c.id = a.c_id and c.cs_id = d.id '\
+                'where a.cohensd > %s and a.pvalue_corrected < %s and a.gene_id = b.id and c.id = a.c_id and c.cs_id = d.id '\
                     'and c.st_id = e.id order by a.cohensd desc limit 100;'
             try:
-                db_cursor.execute(sql, (cohensd_thres,))
+                db_cursor.execute(sql, (cohensd_thres, pvalue_corr_thres, ))
             except:
                 db_conn, db_cursor = get_db()
-                db_cursor.execute(sql, (cohensd_thres,))
+                db_cursor.execute(sql, (cohensd_thres, pvalue_corr_thres, ))
 
     else:
-        if cohensd_thres is None:
+        if cohensd_thres is None or pvalue_corr_thres is None:
             sql = f'select a.*, b.symbol, d.cluster_setting, e.prefix, c.cluster_label, c.cluster_info from {hidare_table_str} '\
                 'where b.symbol in %s and a.gene_id = b.id and c.id = a.c_id and c.cs_id = d.id '\
                     'and c.st_id = e.id order by a.cohensd desc limit 100;'
@@ -179,13 +184,13 @@ def gene_search():
                 db_cursor.execute(sql, (gene_names,))
         else:
             sql = f'select a.*, b.symbol, d.cluster_setting, e.prefix, c.cluster_label, c.cluster_info from {hidare_table_str} '\
-                'where b.symbol in %s and a.cohensd > %s and a.gene_id = b.id and c.id = a.c_id and '\
+                'where b.symbol in %s and a.cohensd > %s and a.pvalue_corrected < %s and a.gene_id = b.id and c.id = a.c_id and '\
                     'c.cs_id = d.id and c.st_id = e.id order by a.cohensd desc limit 100;'
             try:
-                db_cursor.execute(sql, (gene_names, cohensd_thres))
+                db_cursor.execute(sql, (gene_names, cohensd_thres, pvalue_corr_thres))
             except:
                 db_conn, db_cursor = get_db()
-                db_cursor.execute(sql, (gene_names, cohensd_thres))
+                db_cursor.execute(sql, (gene_names, cohensd_thres, pvalue_corr_thres))
 
     result = db_cursor.fetchall()
     if result is None or len(result) == 0:
@@ -203,7 +208,7 @@ def gene_search():
         db_cursor.execute(sql, (ST_prefixes, ))
     except:
         db_conn, db_cursor = get_db()
-        db_cursor.execute(sql, (gene_names, cohensd_thres))
+        db_cursor.execute(sql, (ST_prefixes, ))
     result = db_cursor.fetchall()
     ST_notes = {prefix: note[0] for prefix, note in zip(ST_prefixes, result)}
     db_conn.close()
