@@ -46,9 +46,9 @@ def get_db():
 
 DATA_DIR = f'data_HiDARE_PLIP_20240208'
 ST_ROOT = f'{DATA_DIR}/assets/ST_kmeans_clustering/analysis/one_patient_top_128'
-project_names = ['TCGA-COMBINED', 'KenData_20240814', 'ST']  # do not change the order
-project_start_ids = {'TCGA-COMBINED': 0, 'KenData_20240814': 159011314, 'ST': 281115587}
-backbones = ['HERE_CONCH', 'HERE_UNI'] # choices: 'HERE_CONCH', 'HERE_PLIP', 'HERE_ProvGigaPath', 'HERE_UNI'
+project_names = ['TCGA-COMBINED', 'KenData_20240814', 'ST', 'CPTAC']  # do not change the order
+project_start_ids = {'TCGA-COMBINED': 0, 'KenData_20240814': 159011314, 'ST': 281115587, 'CPTAC': 281293653}
+backbones = ['HERE_CONCH'] # choices: 'HERE_CONCH', 'HERE_PLIP', 'HERE_ProvGigaPath', 'HERE_UNI'
 
 def load_cfg_from_json(json_file):
     with open(json_file, "r", encoding="utf-8") as reader:
@@ -186,7 +186,7 @@ for backbone in backbones:
 
 print('after loading faiss indexes ', psutil.virtual_memory().used/1024/1024/1024, "GB")
 
-with open(f'{DATA_DIR}/assets/randomly_1000_data_with_PLIP_ProvGigaPath_CONCH_20240814.pkl', 'rb') as fp: # with HERE_ProvGigaPath, with CONCH, random normal distribution
+with open(f'{DATA_DIR}/assets/randomly_1000_data_with_PLIP_ProvGigaPath_CONCH_20241219.pkl', 'rb') as fp: # with HERE_ProvGigaPath, with CONCH, random normal distribution
     randomly_1000_data = pickle.load(fp)
 
 font = ImageFont.truetype("Gidole-Regular.ttf", size=36)
