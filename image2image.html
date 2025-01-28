@@ -169,12 +169,13 @@
                             <option value="KenData_20240814" selected>NCIData</option>
                             <option value="ST">ST</option>
                             <option value="TCGA-COMBINED">TCGA</option>
+                            <option value="CPTAC">CPTAC</option>
                             <option value="ALL">ALL</option>
                         </select>
                         <label for="search_backbone">4. backbone: </label>
                         <select name="search_backbone" id="search_backbone">
                             <option value="HERE_CONCH" selected>HERE_CONCH</option>
-                            <option value="HERE_UNI">HERE_UNI</option>
+                            <!-- <option value="HERE_UNI">HERE_UNI</option> -->
                             <!-- <option value="HERE_ProvGigaPath">HERE_ProvGigaPath</option>
                             <option value="HERE_PLIP">HERE_PLIP</option> -->
                         </select>
@@ -641,8 +642,8 @@
                                     show_image(project_name, slide_name, image_viewer, heatmap_viewer);
                                     show_annotations(project_name, slide_name, anno_viewer, items[slide_name]['annotations']);
                                     hiddendivid.innerText = `${project_name}_${slide_name}`;
-                                    document.getElementById("infoContent").innerText = items[slide_name]['note'];
-                                    //document.getElementById("infoContent").innerHTML = items[slide_name]['note'];
+                                    //document.getElementById("infoContent").innerText = items[slide_name]['note'];
+                                    document.getElementById("infoContent").innerHTML = items[slide_name]['note'];
                                     commentcontent = items[slide_name]['note'];
                                 }
                                 let viewport_coord = image_viewer.viewport.imageToViewportCoordinates(x, y);

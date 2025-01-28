@@ -472,7 +472,7 @@ def image_search_main(params):
     db_conn, db_cursor = get_db()
 
     sql = f'select a.*, b.scale, b.patch_size_vis_level, b.svs_prefix, b.external_link, b.note from '\
-        'faiss_table_20240814 as a, image_table_20240814 as b where '\
+        'faiss_table_20241219 as a, image_table_20241219 as b where '\
             'a.rowid in %s and a.svs_prefix_id = b.svs_prefix_id and '\
                 'a.project_id = b.project_id'
     try:
