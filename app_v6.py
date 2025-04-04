@@ -290,6 +290,8 @@ def main_here101_step2():
 
     search_backbone = 'HERE_ProvGigaPath'
     search_backbone = 'HERE_CONCH'
+    postfix = ''
+    postfix = '_r2r4'
 
     # for search_backbone in ['HERE_PLIP', 'HERE_ProvGigaPath', 'HERE_CONCH']:
     for search_backbone in ['HERE_CONCH']:
@@ -300,8 +302,8 @@ def main_here101_step2():
         save_root = f'/data/Jiang_Lab/Data/Zisha_Zhong/HERE101/allpng_with_r2r4/search_results_{search_backbone}_20250403'
         images_dir = f'/data/Jiang_Lab/Data/Zisha_Zhong/HERE101/allpng_with_r2r4/png'
 
-        save_root = f'/data/Jiang_Lab/Data/Zisha_Zhong/HERE101/allpng_with_r2r4_20250403/search_results_{search_backbone}'
-        images_dir = f'/data/Jiang_Lab/Data/Zisha_Zhong/HERE101/allpng_with_r2r4_20250403/png'
+        save_root = f'/data/Jiang_Lab/Data/Zisha_Zhong/HERE101/allpng_with_r2r4_20250403/search_results_{search_backbone}{postfix}'
+        images_dir = f'/data/Jiang_Lab/Data/Zisha_Zhong/HERE101/allpng_with_r2r4_20250403/png{postfix}'
 
         svs_dir = '/data/zhongz2/KenData_20240814_256/svs'
         patches_dir = '/data/zhongz2/KenData_20240814_256/patches'
@@ -319,8 +321,8 @@ def main_here101_step2():
         query_prefixes = [os.path.basename(f).replace('.pkl', '') for f in files]
         all_results = []
         for prefix in query_prefixes:
-            if '_r2' in prefix or '_r4' in prefix:
-                continue
+            # if '_r2' in prefix or '_r4' in prefix:
+            #     continue
 
             f = os.path.join(save_root, prefix+'.pkl')
             if not os.path.exists(f):
@@ -425,6 +427,69 @@ def main_here101_step2():
         df.to_excel(os.path.join(save_root, 'hidare_result.xlsx'))
 
 
+def add_margin():
+
+    import sys,os,glob,cv2,pdb
+    import numpy as np
+    root = '/Users/zhongz2/down/hidare_evaluation_from_Jinlin/HERE101_results_20250403'
+    save_root = '/Users/zhongz2/down/hidare_evaluation_from_Jinlin/HERE101_results_20250404'
+
+    for method in ['method3', 'method4', 'method5']:
+        files = glob.glob(os.path.join(root, method, '*.jpg'))
+
+        save_dir = os.path.join(save_root, method)
+        os.makedirs(save_dir, exist_ok=True)
+
+        for f in files:
+            im = cv2.imread(f)
+            H,W=im.shape[:2]
+            n = int(W/1000)
+            if int(W%1000)!=0:
+                print(os.path.basename(f))
+                pdb.set_trace()
+            
+            pad_img = 255*np.ones((H,10,3),dtype=np.uint8)
+            res_imgs = []
+            for i in range(n):
+                res_imgs.append(im[:, i*1000:(i+1)*1000,:])
+                res_imgs.append(pad_img)
+
+            res_imgs = np.concatenate(res_imgs, axis=1)
+            cv2.imwrite(os.path.join(save_dir, os.path.basename(f)), res_imgs)  # RGB --> BGR
+
+
+def move6cases():
+
+    import sys,os,glob,cv2,pdb
+    import numpy as np
+    
+
+    selected_prefixes = [
+        '1034344-2',
+        '1027436-1',
+        '1034402-1',
+        '564850-1',
+        'liver-0',
+        '1035020-2'
+    ]
+    
+    root = '/Users/zhongz2/down/hidare_evaluation_from_Jinlin/HERE101_results_20250404'
+    save_root = '/Users/zhongz2/down/hidare_evaluation_from_Jinlin/HERE101_results_20250404_6cases'
+
+    for i in range(6):
+        method = f'method{i+1}'
+        if i==5:
+            method = 'png'
+        save_dir = os.path.join(save_root, method)
+        os.makedirs(save_dir, exist_ok=True)
+        for prefix in selected_prefixes:
+            files = []
+            for postfix in ['.jpg', '.html', '.png']:
+                files.extend(glob.glob(os.path.join(root, method, f'{prefix}{postfix}')))
+            for f in files:
+                os.system('cp "{}" "{}"'.format(f, os.path.join(save_dir, os.path.basename(f))))
+
+
 
 
 def generate_r2_r4():
@@ -459,15 +524,18 @@ def generate_r2_r4():
             os.makedirs(images_dir1, exist_ok=True)
             im1 = cv2.resize(im, dsize=None, fx=1/scale,fy=1/scale,interpolation=cv2.INTER_CUBIC)
             cv2.imwrite(os.path.join(images_dir1, prefix+f'_r{scale}.png' ), im1)
-    
+
+
 
 # 20240804 HERE_CONCH
 def main_here101_with_r2r4_CONCH(search_backbone):
     root = '/mnt/hidare-efs/data/HERE_assets'
-    files = sorted(glob.glob(f'{root}/allpng_with_r2r4_20250403/png/*.png'))
+    postfix=''  # for R0
+    postfix='_r2r4' # for R2 and R4
+    files = sorted(glob.glob(f'{root}/allpng_with_r2r4_20250403/png{postfix}/*.png'))
     print('files', files)
     # search_backbone = 'HERE_CONCH'
-    save_dir = f'{root}/allpng_with_r2r4_20250403/search_results_{search_backbone}'
+    save_dir = f'{root}/allpng_with_r2r4_20250403/search_results_{search_backbone}{postfix}'
     os.makedirs(save_dir, exist_ok=True)
 
     selected_prefixes = [
