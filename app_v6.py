@@ -458,6 +458,35 @@ def add_margin():
             cv2.imwrite(os.path.join(save_dir, os.path.basename(f)), res_imgs)  # RGB --> BGR
 
 
+def remove6cases():
+
+    import sys,os,glob,cv2,pdb
+    import numpy as np
+    
+
+    selected_prefixes = [
+        '1034344-2',
+        '1027436-1',
+        '1034402-1',
+        '564850-1',
+        'liver-0',
+        '1035020-2'
+    ]
+
+    root = '/Users/zhongz2/down/hidare_evaluation_from_Jinlin/HERE101_evaluation_20250409'
+    
+    for i in range(6):
+        method = f'method{i+1}'
+        if i==5:
+            method = 'png'
+        for prefix in selected_prefixes:
+            files = []
+            for postfix in ['.jpg', '.html', '.png']:
+                files.extend(glob.glob(os.path.join(root, method, f'{prefix}{postfix}')))
+            for f in files:
+                os.system('rm -rf "{}"'.format(f))
+
+
 def move6cases():
 
     import sys,os,glob,cv2,pdb
@@ -472,9 +501,10 @@ def move6cases():
         'liver-0',
         '1035020-2'
     ]
-    
-    root = '/Users/zhongz2/down/hidare_evaluation_from_Jinlin/HERE101_results_20250404'
-    save_root = '/Users/zhongz2/down/hidare_evaluation_from_Jinlin/HERE101_results_20250404_6cases'
+
+    root = '/Users/zhongz2/down/hidare_evaluation_from_Jinlin/HERE101_results_20250407'
+    save_root = '/Users/zhongz2/down/hidare_evaluation_from_Jinlin/HERE101_results_20250407_6cases'
+    os.makedirs(save_root+'/twitter_data', exist_ok=True)
 
     for i in range(6):
         method = f'method{i+1}'
@@ -489,8 +519,59 @@ def move6cases():
             for f in files:
                 os.system('cp "{}" "{}"'.format(f, os.path.join(save_dir, os.path.basename(f))))
 
+            twitter_dirs = []
+            for f in files:
+                if '.html' in f:
+                    with open(f, 'r') as fp:
+                        lines = fp.readlines()
+                    for line in lines:
+                        if 'Top-' in line:
+                            s1 = line.find('target="_blank">')
+                            s2 = line.find('</a></div>')
+                            tid = line[s1+len('target="_blank">'):s2].split('/')[-1]
+                            os.system('cp -r "{}" "{}"'.format(os.path.join(root, 'twitter_data', tid), os.path.join(save_root, 'twitter_data', tid)))
+
+def generate_method2_html():
+
+    import sys,os,glob,shutil
+    import pandas as pd
+    from natsort import natsorted
 
 
+    selected_prefixes = [
+        '1034344-2',
+        '1027436-1',
+        '1034402-1',
+        '564850-1',
+        'liver-0',
+        '1035020-2'
+    ]
+
+    save_dir = '/Users/zhongz2/down/hidare_evaluation_from_Jinlin/HERE101_results_20250407/'
+
+    files = natsorted(glob.glob('/Users/zhongz2/down/hidare_evaluation_from_Jinlin/HERE101_results_20250407/method2/*.html'))
+    
+    lines = []
+    prefixes = []
+    prefixes2 = []
+    for f in files:
+        fname = os.path.basename(f)
+        prefix = os.path.splitext(fname)[0]
+        lines.append('<a href="HERE101_eval/method2/{}.html" target="_blank">{}</a><br/>'.format(prefix, prefix))
+        prefixes.append(prefix)
+
+        if prefix not in selected_prefixes:
+            prefixes2.append(prefix)
+
+    # with open(os.path.join(save_dir, 'method2.html'), 'w') as fp:
+    #     fp.writelines(lines)
+    
+    df = pd.DataFrame(prefixes, columns=['query'])
+    df.to_excel(os.path.join(save_dir, 'scores.xlsx'), index=None)
+
+
+    df2 = pd.DataFrame(prefixes2, columns=['query'])
+    df2.to_excel(os.path.join(save_dir, 'scores_without_6cases.xlsx'), index=None)
 
 def generate_r2_r4():
 
