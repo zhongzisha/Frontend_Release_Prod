@@ -1,12 +1,32 @@
 
+# Web engine for tumor pathology image retrievals on massive scales
+
+**HERE training code: https://github.com/data2intelligence/HERE_training**
+
+**HERE web deployment code: https://github.com/data2intelligence/HERE_website**
+
+**HERE web app: https://hereapp.ccr.cancer.gov**
+
+**HERE101 dataset: https://github.com/data2intelligence/HERE101**
+
+**[Jiang Lab, CDSL, CCR, NCI, NIH](https://ccr.cancer.gov/staff-directory/peng-jiang)**
+
+[Zisha Zhong](https://scholar.google.com/citations?user=FYvMdNcAAAAJ), [Jinlin Huang], [Xinjing Li], [Lijuan Song], [Lanqi Gong], [Beibei Ru](https://scholar.google.com/citations?user=QB7Aj4YAAAAJ&hl=en), [Rohit Paul], [Jason Levine], [Yu Zhang], [Kenneth Aldape](https://ccr.cancer.gov/staff-directory/kenneth-aldape), [Peng Jiang](https://ccr.cancer.gov/staff-directory/peng-jiang)
+
+[[`Paper`](https://ccr.cancer.gov/staff-directory/peng-jiang)] [[`Project`](https://ccr.cancer.gov/staff-directory/peng-jiang)] [[`HERE App`](https://hereapp.ccr.cancer.gov/)] [[`HERE101 Dataset`](https://github.com/data2intelligence/HERE101)] [[`BibTeX`](#citing-here-paper)]
+
+Hematoxylin and Eosin staining (H&E) is widely used in clinical practice, but efficient and versatile Google-like image retrieval tools are lacking. We developed the H&E Retrieval Engine (HERE, https://hereapp.ccr.cancer.gov) to analyze patient cases based on image similarities to database records. Using H&E image regions as input, HERE searches 21.2 terabytes of whole-slide images from multiple tumor histopathology cohorts through a 12.1-gigabyte memory index, and returns top images containing regions similar to the query. HERE scans high-resolution images in the database using accurate artificial intelligence encoding and ultra-efficient hierarchical skip indexing. HERE demonstrated performance superior to existing image retrieval tools based on blinded pathologist scoring using benchmark queries that represent key image features of human tumors. By pairing spatial transcriptomics with H&E images, HERE also enables retrieving image features from gene transcriptomics input and identifies molecular pathways associated with tumor histologies.
+
+![HERE](Fig1.jpg?raw=true)
 
 
+# Setting up the HERE server
 
+## Prerequisite
 
+To deploy the HERE website on a Linux server, we need to install a web server and the necessary libraries and softwares (e.g., Apache Httpd server, MySQL database, Python environment, etc.). If you're unfamiliar with these concepts, please search on Google or ask ChatGPT for more information.
 
-(1), Provide stepwise list on prerequisite installation on the Server node
-
-* Directory structure and set the common environmental variables
+### Directory structure and set the common environmental variables
 ```bash
 ##########################################################################
 # Directory structures on web server node:
@@ -40,7 +60,7 @@ export PKG_CONFIG_PATH=${HERE_DEPS_INSTALL}/lib64/pkgconfig:${HERE_DEPS_INSTALL}
 ```
 
 
-* Install dependency libraries on CentOS 7
+### Install dependency libraries on CentOS 7
 
 ```bash
 # Install packages on CentOS Linux release 7.9.2009 (Core)
@@ -82,7 +102,7 @@ make install
 
 
 
-* Install MySQL (skip if installed)
+### Install MySQL (skip if installed)
 ```bash
 cd $HERE_DEPS_TMP
 curl -sSLO https://dev.mysql.com/get/mysql84-community-release-el7-1.noarch.rpm
@@ -92,7 +112,7 @@ sudo yum install -y mysql-server
 sudo systemctl start mysqld
 ```
 
-* Install Python-3.9.18 (skip if installed)
+### Install Python-3.9.18 (skip if installed)
 ```bash
 # Compile Python (skip if already installed)
 cd ${HERE_DEPS_TMP}
@@ -106,7 +126,7 @@ make install
 ```
 
 
-* Install Python virtual environment
+### Install Python virtual environment
 ```bash
 # Virtual environment
 cd ${APP_ROOT}
@@ -115,7 +135,7 @@ virtualenv -p python3.9 venv
 source ${APP_ROOT}/venv/bin/activate   # important
 ```
 
-* Clone HERE_website github repository
+### Clone HERE_website github repository
 ```bash
 ## clone HERE_website
 if [ -d ${WEB_ROOT} ]; then rm -rf ${WEB_ROOT}; fi
@@ -126,13 +146,13 @@ else
 fi
 ```
 
-* Install Python libraries in virtual environment
+### Install Python libraries in virtual environment
 ```bash
 # install python packages
 cd ${WEB_ROOT} && pip3 install -r requirements.txt
 ```
 
-* Install mod_wsgi module for Apache httpd server (skip if installed)
+### Install mod_wsgi module for Apache httpd server (skip if installed)
 ```bash
 # Compile mod_wsgi (need root), skip if already installed
 cd ${HERE_DEPS_TMP}
@@ -147,7 +167,7 @@ sudo make install
 sudo chmod 755 /usr/lib64/httpd/modules/mod_wsgi.so	# important
 ```
 
-* Modify Apache httpd server configuration according to the environmental variables
+### Modify Apache httpd server configuration according to the environmental variables
 ```bash
 # modify /etc/httpd/conf/httpd.conf
 echo """
@@ -182,7 +202,7 @@ echo """
 """ | sudo tee -a /etc/httpd/conf/httpd.conf
 ```
 
-* Enable mod_wsgi module in Apache httpd server
+### Enable mod_wsgi module in Apache httpd server
 ```bash
 # add the following to /etc/httpd/conf.modules.d/10-wsgi.conf
 <IfModule !wsgi_module>
@@ -191,7 +211,7 @@ echo """
 ```
 
 
-* Generate files according to the environment variables
+### Generate files according to the environment variables
 ```bash
 # generate wsgi.py
 cd ${WEB_ROOT}
@@ -205,14 +225,13 @@ cd ${WEB_ROOT}
 ln -sf ${DST_DATA_ROOT} data_HiDARE_PLIP_20240208
 ```
 
-
-(2), Copy the website code from the Github repository
+## Copy the website code from the Github repository
 https://github.com/data2intelligence/HERE_website
 
-(3), Copy files from NIH Helix node
+##  Copy files from NIH Helix node
 All data saved in NIH Helix node, please run the following commands from the web server node
 
-* Set environment variables
+### Set environment variables
 ```bash
 ##########################################################################
 # Directory structures:
@@ -242,7 +261,7 @@ export SRC_HOST=helix.nih.gov:
 export DST_HOST=
 ```
 
-* Copy data and decompress data
+### Copy data and decompress data
 ```bash
 ########################### copy data processing scripts to the web server ###################
 rsync -avh \
@@ -273,8 +292,6 @@ for pi in ${!names[@]}; do
 done
 # decompress data
 bash ${APP_ROOT}/deployment_scripts/unzip_files.sh ${DST_DATA_ROOT}/20240208v4_TCGA-COMBINED/big_images/
-
-
 
 
 ########################## ST data ############################
@@ -309,8 +326,8 @@ unzip assets_20240630.zip;
 ```
 
 
-(4), Establish PROD database from dump file
-Please run the following command to import HERE database to the MySQL database
+## Establish PROD database from dump file
+Please run the following command to import HERE database to the MySQL database.
 ```bash
 # create HERE database in MySQL
 mysql -u root -p
@@ -320,18 +337,29 @@ mysql> exit;
 sudo mysql -p -u root hidare_app < ${DST_DATA_ROOT}/HERE_20240702.sql
 ```
 
-(5), Start the server and HERE app
+## Start the server and HERE web app
+Please run the following command to start HERE web app on the server.
+
 ```bash
 sudo setenforce 0                   # disable SELinux temporarily, or go to /etc/selinux/config, disable it forever
 sudo systemctl restart httpd                  
 
 ```
-* Check the /var/log/httpd/error_log for Apache httpd log
+and then check the /var/log/httpd/error_log for Apache httpd log.
 
 
+## Citing HERE
 
+If you use HERE or HERE101 dataset in your research, please use the following BibTeX entry.
 
-
+```bibtex
+@article{jiang2024ncihereapp,
+  title={Web engine for tumor pathology image retrievals on massive scales},
+  author={Zhong, Zisha and Huang, Jinlin and Li, Xinjing, and Song, Lijuan and Gong, Lanqi and Ru, Beibei and Paul, Rohit and Levine, Jason and Zhang, Yu and Aldape, Kenneth and Jiang Peng},
+  journal={Submitted},
+  url={Submitted},
+  year={2024}
+}
 
 
 

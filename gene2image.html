@@ -109,8 +109,22 @@
                 src="/recogito-client-plugins/plugins/annotorious-shape-labels/dist/annotorious-shape-labels.min.js"></script>
             <script src="/mycolors.js?ver=1234" type="text/javascript"></script>
 
-            <h1 style="color:#002fff; text-align: center;">Gene-to-Image Retrieval for Spatial Transcriptomics
-                Data</h1>
+
+            <div style="display: flex; flex-direction: column; align-items: center; width: 100%;">
+            <h1 style="color:#002fff; text-align: center;">Transcriptomics-to-Image Retrieval for Spatial Transcriptomics Data</h1>
+
+                <div style="width: 80%;">
+
+We use spatial transcriptomics (ST) data paired with H&E images to identify image features linked to the high expression of a specific gene (for example, SERPING1). Instead of simply showing image patches with high gene expression, which wouldn’t account for visual similarities, we take a more structured approach.
+
+For each sample, we group image patches around ST detection spots into eight clusters based on how visually similar they are, using the k-means algorithm. We do this clustering separately for each sample to avoid batch effects. Next, we test whether the expression of the query gene is significantly higher in spots within a given image cluster compared to those outside the cluster.
+
+As a result, for each gene, we produce a set of image clusters strongly associated with its high expression (Cohen’s d > 1 and FDR < 0.05). On average, each image cluster is linked to thousands of genes, showing that these clusters reflect meaningful gene expression patterns within the tissue.
+
+                </div>
+                <br/>
+            </div>
+
             <div style="padding: 2px; background-color: Ivory; text-align: center; vertical-align: middle;">
 
                 <div id="status_div1" hidden></div>

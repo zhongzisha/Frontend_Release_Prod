@@ -112,7 +112,20 @@
                 src="/recogito-client-plugins/plugins/annotorious-shape-labels/dist/annotorious-shape-labels.min.js"></script>
             <script src="/mycolors.js?ver=1234" type="text/javascript"></script>
 
-            <h1 style="color:#002fff; text-align: center;">Image-to-Image and Image-to-Gene Retrieval</h1>
+            <div style="display: flex; flex-direction: column; align-items: center; width: 100%;">
+                <h1 style="color:#002fff; text-align: center;">Image-to-Image Retrieval</h1>
+
+                <div style="width: 80%;">
+                    Users upload one image region of interest to retrieve similar image patches from 
+                    the H&E collection from the NCI Lab of Pathology, TCGA, or CPTAC cohorts. 
+                    HERE encodes the input image into a vector with the encoder and attention map 
+                    described in previous sections. Then, the system will return top-K (50 by default) 
+                    most similar image patches and their locations in the corresponding whole-tumor slides, 
+                    together with clinical information if available. The result page displays whole-slide images 
+                    ordered by the sum of rank scores from the top-K retrievals. 
+                </div>
+                <br/>
+            </div>
             <div id="status_div3"></div>
             
             <div id="helpoverlay" class="helpoverlay"></div>
@@ -145,43 +158,46 @@
             <div class="divcontainer1_outer">
                 <div class="divcontainer1" id="divcontainer1">
                     <div id="divcontainer1Left">
-                        <div>
-                        <label for="file">1. Choose one or more images (jpeg/png/bmp): </label>
-                        <input type="file" id="file" accept="image/png, image/jpeg, image/bmp" onchange="readURL(this);" multiple />
-                        <div>or click an example image: 
-                            <a href="#" onclick="javascript:load_example_img(0);">1</a>,&nbsp;
-                            <a href="#" onclick="javascript:load_example_img(1);">2</a>,&nbsp;
-                            <a href="#" onclick="javascript:load_example_img(2);">3</a>
-                        </div>
-                        <select name="search_feature" id="search_feature" hidden>
-                            <option value="before_attention" selected>before_attention</option>
-                            <option value="before_attention_umap3d" disabled>before_attention_umap3d</option>
-                        </select>
-                        <select name="search_method" id="search_method" hidden>
-                        </select>
-                        </div>
-                        <br/>
-                        <div>
-                        <label for="knn_k"></label>2. Number of search images: <input value="50" type="text" id="knn_k">
-                        </div>
-                        <br/>
-                        <div>
-                        <label for="search_project">3. Select a project for search: </label>
-                        <select name="search_project" id="search_project">
-                            <option value="KenData_20240814" selected>NCIData</option>
-                            <option value="ST">ST</option>
-                            <option value="TCGA-COMBINED">TCGA</option>
-                            <option value="CPTAC">CPTAC</option>
-                            <option value="ALL">ALL</option>
-                        </select>
-                        <label for="search_backbone">4. backbone: </label>
-                        <select name="search_backbone" id="search_backbone">
-                            <option value="HERE_CONCH" selected>HERE_CONCH</option>
-                            <!-- <option value="HERE_UNI">HERE_UNI</option> -->
-                            <!-- <option value="HERE_ProvGigaPath">HERE_ProvGigaPath</option>
-                            <option value="HERE_PLIP">HERE_PLIP</option> -->
-                        </select>
-                        </div>
+                        <div style="text-align: left;">
+                            <div style="text-align: center; justify-content: center;">
+                                <label for="file">1. Choose one or more images (jpeg/png/bmp): </label>
+                                <input type="file" id="file" accept="image/png, image/jpeg, image/bmp" onchange="readURL(this);" multiple />
+                                <div>or click an example image: 
+                                    <a href="#" onclick="javascript:load_example_img(0);">example 1</a>,&nbsp;
+                                    <a href="#" onclick="javascript:load_example_img(1);">example 2</a>,&nbsp;
+                                    <a href="#" onclick="javascript:load_example_img(2);">example 3</a>
+                                </div>
+                                <select name="search_feature" id="search_feature" hidden>
+                                    <option value="before_attention" selected>before_attention</option>
+                                    <option value="before_attention_umap3d" disabled>before_attention_umap3d</option>
+                                </select>
+                                <select name="search_method" id="search_method" hidden>
+                                </select>
+                            </div>
+                            <br/>
+                            <div>
+                            <label for="knn_k"></label>2. Number of search images (K): <input value="50" type="text" id="knn_k">
+                            </div>
+                            <br/>
+                            <div>
+                            <label for="search_project">3. Select a cohort for search: </label>
+                            <select name="search_project" id="search_project">
+                                <option value="KenData_20240814" selected>NCIData</option>
+                                <option value="ST">ST</option>
+                                <option value="TCGA-COMBINED">TCGA</option>
+                                <option value="CPTAC">CPTAC</option>
+                                <option value="ALL">ALL</option>
+                            </select>
+                            <label for="search_backbone">4. backbone: </label>
+                            <select name="search_backbone" id="search_backbone">
+                                <option value="HERE_CONCH" selected>HERE_CONCH</option>
+                                <!-- <option value="HERE_UNI">HERE_UNI</option> -->
+                                <!-- <option value="HERE_ProvGigaPath">HERE_ProvGigaPath</option>
+                                <option value="HERE_PLIP">HERE_PLIP</option> -->
+                            </select>
+                            </div>
+                        </div>  
+
                         <div>
                             <div style="padding: 1px; text-align: center;">
                                 <button onclick="do_search_click()" id="btn_search">Search</button>
@@ -574,7 +590,7 @@
                     let container = document.getElementById(table_viewer);
                     container.innerHTML = "";
                     const slide_names = Object.keys(items);
-                    let table_str = '<table><tr><td>project_name</td><td>slide_name<div id="download_all_div"></div></td><td>thumbnails</td></tr>';
+                    let table_str = '<table><tr><td>cohort_name</td><td>slide_name<div id="download_all_div"></div></td><td>thumbnails</td></tr>';
                     for (let i = 0; i < slide_names.length; i++) {
                         let slide_name = ranks[i];
                         let project_name = items[slide_name]['project_name'];
