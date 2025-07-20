@@ -1,11 +1,11 @@
 
 # Web engine for tumor pathology image retrievals on massive scales
 
-**HERE training code: https://github.com/data2intelligence/HERE_training**
+**HERE development code: https://github.com/data2intelligence/HERE_training**
 
-**HERE web deployment code: https://github.com/data2intelligence/HERE_website**
+**HERE website deployment code: https://github.com/data2intelligence/HERE_website**
 
-**HERE web app: https://hereapp.ccr.cancer.gov**
+**HERE website app: https://hereapp.ccr.cancer.gov**
 
 **HERE101 dataset: https://github.com/data2intelligence/HERE101**
 
@@ -22,11 +22,14 @@ Hematoxylin and Eosin staining (H&E) is widely used in clinical practice, but ef
 
 # Setting up the HERE server
 
-## Prerequisite
+## 1. Prerequisite
 
 To deploy the HERE website on a Linux server, we need to install a web server and the necessary libraries and softwares (e.g., Apache Httpd server, MySQL database, Python environment, etc.). If you're unfamiliar with these concepts, please search on Google or ask ChatGPT for more information.
 
 ### Directory structure and set the common environmental variables
+
+First, we need to create some directories and set some environmental variables on the server.
+
 ```bash
 ##########################################################################
 # Directory structures on web server node:
@@ -100,8 +103,6 @@ make
 make install
 ```
 
-
-
 ### Install MySQL (skip if installed)
 ```bash
 cd $HERE_DEPS_TMP
@@ -124,7 +125,6 @@ CFLAGS=-fPIC ./configure --enable-shared=no --prefix=${HERE_DEPS_INSTALL}
 make
 make install
 ```
-
 
 ### Install Python virtual environment
 ```bash
@@ -215,23 +215,24 @@ echo """
 ```bash
 # generate wsgi.py
 cd ${WEB_ROOT}
-cat > wsgi.py <<EOL
+cat > wsgi.py << EOL
 #!${APP_ROOT}/venv/bin/python
 from app import app as application
-EOL 
+EOL
+
 
 # make soft links from HERE_assets to the HERE website root
 cd ${WEB_ROOT}
 ln -sf ${DST_DATA_ROOT} data_HiDARE_PLIP_20240208
 ```
 
-## Copy the website code from the Github repository
+## 2. Copy the website code from the Github repository
 https://github.com/data2intelligence/HERE_website
 
-##  Copy files from NIH Helix node
+## 3. Copy files from NIH Helix node
 All data saved in NIH Helix node, please run the following commands from the web server node
 
-### Set environment variables
+### Set environment variables in case you don't set them
 ```bash
 ##########################################################################
 # Directory structures:
@@ -282,8 +283,6 @@ bash ${APP_ROOT}/deployment_scripts/unzip_files.sh ${DST_DATA_ROOT}/20240208v4_N
 # copy data
 mkdir -p ${DST_DATA_ROOT}/20240208v4_TCGA-COMBINED/big_images
 names=("BRCA" "PAAD" "CHOL" "UCS" "DLBC" "UVM" "UCEC" "MESO" "ACC" "KICH" "THYM" "TGCT" "PCPG" "ESCA" "SARC" "CESC" "PRAD" "THCA" "OV" "KIRC" "BLCA" "STAD" "SKCM" "READ" "LUSC" "LUAD" "LIHC" "LGG" "KIRP" "HNSC" "COAD" "GBM")
-names=("SARC" "CESC" "PRAD" "THCA" "OV" "KIRC" "BLCA" "STAD" "SKCM" "READ" "LUSC" "LUAD" "LIHC" "LGG" "KIRP" "HNSC" "COAD" "GBM")
-names=("BRCA" "CHOL" "DLBC" "MESO" "BLCA")
 for pi in ${!names[@]}; do
    rsync -avh \
        ${SRC_HOST}/data/Jiang_Lab/Data/Zisha_Zhong/temp_20240208/differential_results/20240208v4_TCGA_${names[${pi}]}/big_images/* \
