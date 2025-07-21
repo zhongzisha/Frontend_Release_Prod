@@ -494,18 +494,6 @@ As a result, for each gene, we produce a set of image clusters strongly associat
 
                 var results_path = null;
 
-                function get_results_path(project_name) {
-
-                    let version_date = '20240208v4';
-                    if (project_name.includes('KenData')) {
-                        version_date = '20240202v4';
-                    }
-                    if (project_name.includes('ST')) {
-                        version_date = '20240202v4';
-                    }
-                    return `data_HiDARE_PLIP_20240208/${version_date}_${project_name}/PanCancer2GPUsFP/shared_attention_imagenetPLIP/split1_e95_h224_density_vis/feat_before_attention_feat/test/big_images`;
-                }
-
                 function download(img) {
                     let link = document.createElement("a");
                     link.href = img.src;
