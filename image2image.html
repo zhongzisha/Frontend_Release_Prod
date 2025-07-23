@@ -541,26 +541,23 @@
 
                 var results_path = null;
 
-                function get_results_path(project_name) {
-
-                    let version_date = '20240208v4';
-                    if (project_name.includes('KenData')) {
-                        version_date = '20240202v4';
-                    }
-                    if (project_name.includes('ST')) {
-                        version_date = '20240202v4';
-                    }
-                    //return `data_HiDARE_PLIP_20240208/${version_date}_${project_name}_v2`;
-                    return `data_HiDARE_PLIP_20240208/${project_name}_big_images`;
-                
-                }
+                // function get_results_path(project_name) {
+                //     let version_date = '20240208v4';
+                //     if (project_name.includes('KenData')) {
+                //         version_date = '20240202v4';
+                //     }
+                //     if (project_name.includes('ST')) {
+                //         version_date = '20240202v4';
+                //     }
+                //     //return `data_HiDARE_PLIP_20240208/${version_date}_${project_name}_v2`;
+                //     return `data_HiDARE_PLIP_20240208/${project_name}_big_images`;
+                // }
 
                 function show_image(project_name, slide_name, image_viewer, heatmap_viewer) {
 
-                    results_path = get_results_path(project_name);
-                    image_viewer.open(`${results_path}/${slide_name}_big_orig.dzi`);
+                    image_viewer.open(`data_HiDARE_PLIP_20240208/${project_name}_big_images/${slide_name}_big_orig.dzi`);
                     if (use_viewer21) {
-                        heatmap_viewer.open(`${results_path}/${slide_name}_big_attention_map.dzi`);
+                        heatmap_viewer.open(`data_HiDARE_PLIP_20240208/${project_name}_big_images/${slide_name}_big_attention_map.dzi`);
                     }
                 }
 

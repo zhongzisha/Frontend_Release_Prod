@@ -232,10 +232,14 @@ As a result, for each gene, we produce a set of image clusters strongly associat
                 <div>
                     <div id="gene_data_div1" hidden>
                         <!--<a href="javascript:void(0)" id="slide_name_label"></a>-->
-                        <a href="" id="gene_data1">Gene data</a>
-                        <a href="" id="cluster_data1">Cluster data</a>
-                        <a href="" id="cluster_analysis_data1">Result1</a>
-                        <a href="" id="cluster_analysis_data21">Result2</a>
+                        Auxiliary data (click to download):
+                        <a href="" id="gene_data1" title="">Gene data</a> 
+                        | 
+                        <a href="" id="cluster_data1" title="">Cluster data</a> 
+                        <!-- |
+                        <a href="" id="cluster_analysis_data1" title="">Result1</a> 
+                        |
+                        <a href="" id="cluster_analysis_data21" title="">Result2</a>  -->
                         <div hidden>
                         <label for="gene_names1">Gene names: </label><input type="text" id="gene_names1" value="CD8A" hidden>
                         <button id="btn_show_gene_maps1" hidden>Show gene heatmap</button>
@@ -646,8 +650,8 @@ As a result, for each gene, we produce a set of image clusters strongly associat
                         gene_div.removeAttribute("hidden");
                         document.getElementById(gene_data_a_id).href = `${results_path}/../../../../gene_data/${slide_name}_gene_data.pkl`;
                         document.getElementById(cluster_data_a_id).href = `${results_path}/${slide_name}_cluster_data.pkl`;
-                        document.getElementById(btn_down_cluster_analysis_id).href = `${results_path}/${slide_name}_cluster_tests.pkl`;
-                        document.getElementById(btn_down_cluster_analysis_id2).href = `${results_path}/${slide_name}_cluster_tests2.csv`;
+                        // document.getElementById(btn_down_cluster_analysis_id).href = `${results_path}/${slide_name}_cluster_tests.pkl`;
+                        // document.getElementById(btn_down_cluster_analysis_id2).href = `${results_path}/${slide_name}_cluster_tests2.csv`;
 
                         let btn = document.getElementById(btn_gene_map_id);
                         btn.onclick = function () {

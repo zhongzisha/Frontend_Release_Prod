@@ -308,6 +308,15 @@ bash ${APP_ROOT}/deployment_scripts/unzip_files.sh ${DST_DATA_ROOT}/20240202v4_S
 bash ${APP_ROOT}/deployment_scripts/unzip_files.sh ${DST_DATA_ROOT}/20240202v4_ST/PanCancer2GPUsFP/shared_attention_imagenetPLIP/split1_e95_h224_density_vis/feat_before_attention_feat/test/patch_images/
 
 
+# copy data
+rsync -avhrc \
+   --exclude cached_data \
+   --exclude save_root_gene_da_dir \
+   --exclude vst_dir \
+   --exclude svs \
+   ${SRC_HOST}/data/zhongz2/temp29/debug/results_20240724_e100/ngpus2_accum4_backboneCONCH_dropout0.25/analysis/ST \
+   ${DST_HOST}${DST_DATA_ROOT}/
+
 ########################## assets data ############################
 # copy data
 rsync -avh \
@@ -334,7 +343,12 @@ mysql> create database hidare_app;
 mysql> exit;
 # import data
 sudo mysql -p -u root hidare_app < ${DST_DATA_ROOT}/HERE_20240702.sql
+
+# sudo mysqldump --no-tablespaces --single-transaction --host=${HERE_DB_HOST} --user=${HERE_DB_USER} --password=${HERE_DB_PASSWORD} ${HERE_DB_DATABASE} > HERE_20250723.sql
 ```
+
+
+
 
 ## Start the server and HERE web app
 Please run the following command to start HERE web app on the server.
