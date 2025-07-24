@@ -256,8 +256,10 @@ APP_USERNAME=zhongz2				  # CHANGE THIS
 ##########################################################################
 # please make sure the operating user can read and write these directories on the web server (skip if already existed)
 sudo mkdir -p ${DST_DATA_ROOT}/temp_images_dir ${APP_ROOT} ${HERE_DEPS_INSTALL} ${HERE_DEPS_TMP}
-sudo chown ${APP_USERNAME}:${APP_USERNAME} -R ${APP_ROOT} ${HERE_DEPS_INSTALL} ${HERE_DEPS_TMP}  # optional
-sudo chown ${APP_USERNAME}:${APP_USERNAME} ${DST_DATA_ROOT}						   # optional
+sudo chown ${APP_USERNAME}:${APP_USERNAME} -R ${APP_ROOT} ${HERE_DEPS_INSTALL} ${HERE_DEPS_TMP}  
+sudo chown ${APP_USERNAME}:${APP_USERNAME} ${DST_DATA_ROOT}
+sudo chown ${APP_USERNAME}:${APP_USERNAME} ${DST_DATA_ROOT}/temp_images_dir				   
+
 export SRC_HOST=helix.nih.gov:
 export DST_HOST=
 ```
@@ -339,12 +341,16 @@ Please run the following command to import HERE database to the MySQL database.
 ```bash
 # create HERE database in MySQL
 mysql -u root -p
-mysql> create database hidare_app;
+mysql> create database ${HERE_DB_DATABASE};
 mysql> exit;
 # import data
-sudo mysql -p -u root hidare_app < ${DST_DATA_ROOT}/HERE_20240702.sql
+sudo mysql -p -u root ${HERE_DB_DATABASE} < ${DST_DATA_ROOT}/HERE_20240702.sql
 
-# sudo mysqldump --no-tablespaces --single-transaction --host=${HERE_DB_HOST} --user=${HERE_DB_USER} --password=${HERE_DB_PASSWORD} ${HERE_DB_DATABASE} > HERE_20250723.sql
+# sudo mysqldump --no-tablespaces --host=${HERE_DB_HOST} --user=${HERE_DB_USER} --password=${HERE_DB_PASSWORD} ${HERE_DB_DATABASE} > HERE_20250723.sql
+# mysql --host=${HERE_DB_HOST} --user=${HERE_DB_USER} --password=${HERE_DB_PASSWORD} ${HERE_DB_DATABASE}
+
+sudo mysql --host=${HERE_DB_HOST} --user=${HERE_DB_USER} ${HERE_DB_DATABASE} < ${DST_DATA_ROOT}/HERE_20250723.sql
+
 ```
 
 
