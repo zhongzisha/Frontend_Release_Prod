@@ -255,10 +255,9 @@ DST_DATA_ROOT=/mnt/hidare-efs/data/HERE_assets      # data assets, e.g., images 
 APP_USERNAME=zhongz2				  # CHANGE THIS
 ##########################################################################
 # please make sure the operating user can read and write these directories on the web server (skip if already existed)
-sudo mkdir -p ${DST_DATA_ROOT}/temp_images_dir ${APP_ROOT} ${HERE_DEPS_INSTALL} ${HERE_DEPS_TMP}
+sudo mkdir -p ${DST_DATA_ROOT}/temp_images_dir ${DST_DATA_ROOT}/assets/ST_kmeans_clustering ${APP_ROOT} ${HERE_DEPS_INSTALL} ${HERE_DEPS_TMP}
 sudo chown ${APP_USERNAME}:${APP_USERNAME} -R ${APP_ROOT} ${HERE_DEPS_INSTALL} ${HERE_DEPS_TMP}  
-sudo chown ${APP_USERNAME}:${APP_USERNAME} ${DST_DATA_ROOT}
-sudo chown ${APP_USERNAME}:${APP_USERNAME} ${DST_DATA_ROOT}/temp_images_dir				   
+sudo chown ${APP_USERNAME}:${APP_USERNAME} -R ${DST_DATA_ROOT}
 
 export SRC_HOST=helix.nih.gov:
 export DST_HOST=
@@ -272,67 +271,19 @@ rsync -avh \
    ${DST_HOST}${APP_ROOT}/
 
 
-########################## NCI data ############################
+########################## copy image data ############################
 # copy data
-rsync -avhrv --exclude PanCancer2GPUsFP \
-   ${SRC_HOST}/data/Jiang_Lab/Data/Zisha_Zhong/temp_20240208/differential_results/20240208v4_NCIData \
+rsync -avhrv \
+   ${SRC_HOST}/data/Jiang_Lab/Data/Zisha_Zhong/HERE_website_assets/* \
    ${DST_HOST}${DST_DATA_ROOT}/
 # decompress data
-bash ${APP_ROOT}/deployment_scripts/unzip_files.sh ${DST_DATA_ROOT}/20240208v4_NCIData/big_images/
-
-
-########################## TCGA ############################
-# copy data
-mkdir -p ${DST_DATA_ROOT}/20240208v4_TCGA-COMBINED/big_images
-names=("BRCA" "PAAD" "CHOL" "UCS" "DLBC" "UVM" "UCEC" "MESO" "ACC" "KICH" "THYM" "TGCT" "PCPG" "ESCA" "SARC" "CESC" "PRAD" "THCA" "OV" "KIRC" "BLCA" "STAD" "SKCM" "READ" "LUSC" "LUAD" "LIHC" "LGG" "KIRP" "HNSC" "COAD" "GBM")
-for pi in ${!names[@]}; do
-   rsync -avh \
-       ${SRC_HOST}/data/Jiang_Lab/Data/Zisha_Zhong/temp_20240208/differential_results/20240208v4_TCGA_${names[${pi}]}/big_images/* \
-       ${DST_HOST}${DST_DATA_ROOT}/20240208v4_TCGA-COMBINED/big_images/
-   echo ${pi}
-done
-# decompress data
-bash ${APP_ROOT}/deployment_scripts/unzip_files.sh ${DST_DATA_ROOT}/20240208v4_TCGA-COMBINED/big_images/
-
-
-########################## ST data ############################
-# copy data
-rsync -avhrc \
-   --exclude cached_data \
-   --exclude save_root_gene_da_dir \
-   --exclude big_images_heatmap \
-   --exclude vst_dir \
-   --exclude svs \
-   ${SRC_HOST}/data/Jiang_Lab/Data/Zisha_Zhong/temp_20240202/differential_results/20240202v4_ST \
-   ${DST_HOST}${DST_DATA_ROOT}/
-# decompress data (two command lines)
-bash ${APP_ROOT}/deployment_scripts/unzip_files.sh ${DST_DATA_ROOT}/20240202v4_ST/big_images/
-bash ${APP_ROOT}/deployment_scripts/unzip_files.sh ${DST_DATA_ROOT}/20240202v4_ST/PanCancer2GPUsFP/shared_attention_imagenetPLIP/split1_e95_h224_density_vis/feat_before_attention_feat/test/patch_images/
-
-
-# copy data
-rsync -avhrc \
-   --exclude cached_data \
-   --exclude save_root_gene_da_dir \
-   --exclude vst_dir \
-   --exclude svs \
-   ${SRC_HOST}/data/zhongz2/temp29/debug/results_20240724_e100/ngpus2_accum4_backboneCONCH_dropout0.25/analysis/ST \
-   ${DST_HOST}${DST_DATA_ROOT}/
-
-########################## assets data ############################
-# copy data
-rsync -avh \
-   ${SRC_HOST}/data/Jiang_Lab/Data/Zisha_Zhong/temp_20240208_hidare/assets_20240630.zip \
-   ${DST_HOST}${DST_DATA_ROOT}/
-rsync -avh \
-   ${SRC_HOST}/data/Jiang_Lab/Data/Zisha_Zhong/temp_20240208_hidare/lmdb_images_20240622_64 \
-   ${DST_HOST}${DST_DATA_ROOT}/
-rsync -avh \
-   ${SRC_HOST}/data/Jiang_Lab/Data/Zisha_Zhong/temp_20240208_hidare/HERE_20240702.sql \
-   ${DST_HOST}${DST_DATA_ROOT}/
-# decompress data if you are on Helix, or run the commands one by one
-cd ${DST_DATA_ROOT}/;
-unzip assets_20240630.zip;
+bash ${APP_ROOT}/deployment_scripts/unzip_files.sh ${DST_DATA_ROOT}/NCIData_big_images/
+bash ${APP_ROOT}/deployment_scripts/unzip_files.sh ${DST_DATA_ROOT}/TCGA-COMBINED_big_images/
+bash ${APP_ROOT}/deployment_scripts/unzip_files.sh ${DST_DATA_ROOT}/CPTAC_big_images/
+tar -xvf ${DST_DATA_ROOT}/assets_20250720.tar.gz -C ${DST_DATA_ROOT}/assets/
+tar -xvf ${DST_DATA_ROOT}/assets_20250721_models.tar.gz -C ${DST_DATA_ROOT}/assets/
+unzip ${DST_DATA_ROOT}/ST_processed_data.zip -d ${DST_DATA_ROOT}/assets/ST_kmeans_clustering/
+ln -sf ${DST_DATA_ROOT}/assets/ST_kmeans_clustering/big_images ${DST_DATA_ROOT}/ST_big_images
 ```
 
 
@@ -344,13 +295,7 @@ mysql -u root -p
 mysql> create database ${HERE_DB_DATABASE};
 mysql> exit;
 # import data
-sudo mysql -p -u root ${HERE_DB_DATABASE} < ${DST_DATA_ROOT}/HERE_20240702.sql
-
-# sudo mysqldump --no-tablespaces --host=${HERE_DB_HOST} --user=${HERE_DB_USER} --password=${HERE_DB_PASSWORD} ${HERE_DB_DATABASE} > HERE_20250723.sql
-# mysql --host=${HERE_DB_HOST} --user=${HERE_DB_USER} --password=${HERE_DB_PASSWORD} ${HERE_DB_DATABASE}
-
-sudo mysql --host=${HERE_DB_HOST} --user=${HERE_DB_USER} ${HERE_DB_DATABASE} < ${DST_DATA_ROOT}/HERE_20250723.sql
-
+python add_data_to_mysql.py  
 ```
 
 
