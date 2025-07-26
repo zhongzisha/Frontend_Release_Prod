@@ -52,9 +52,9 @@ DST_DATA_ROOT=/mnt/hidare-efs/data/HERE_assets      # data assets, e.g., images 
 APP_USERNAME=zhongz2				  # CHANGE THIS
 ##########################################################################
 # please make sure the operating user can read and write these directories on the web server (skip if already existed)
-sudo mkdir -p ${DST_DATA_ROOT}/temp_images_dir ${APP_ROOT} ${HERE_DEPS_INSTALL} ${HERE_DEPS_TMP}
+sudo mkdir -p ${DST_DATA_ROOT}/temp_images_dir ${DST_DATA_ROOT}/assets/ST_kmeans_clustering ${APP_ROOT} ${HERE_DEPS_INSTALL} ${HERE_DEPS_TMP}
 sudo chown ${APP_USERNAME}:${APP_USERNAME} -R ${APP_ROOT} ${HERE_DEPS_INSTALL} ${HERE_DEPS_TMP}  # optional
-sudo chown ${APP_USERNAME}:${APP_USERNAME} ${DST_DATA_ROOT}						   # optional
+sudo chown ${APP_USERNAME}:${APP_USERNAME} -R ${DST_DATA_ROOT}						   # optional
 
 
 export PATH=${HERE_DEPS_INSTALL}/bin:$PATH
@@ -217,6 +217,10 @@ echo """
 cd ${WEB_ROOT}
 cat > wsgi.py << EOL
 #!${APP_ROOT}/venv/bin/python
+os.environ['HERE_DB_USER'] = "hidare_app"
+os.environ['HERE_DB_PASSWORD'] = "your password"
+os.environ['HERE_DB_HOST'] = "your server"
+os.environ['HERE_DB_DATABASE'] = "hidare"
 from app import app as application
 EOL
 
@@ -296,6 +300,8 @@ mysql> create database ${HERE_DB_DATABASE};
 mysql> exit;
 # import data
 python add_data_to_mysql.py  
+
+# mysql --host=${HERE_DB_HOST} --user=${HERE_DB_USER} --password=${HERE_DB_PASSWORD} ${HERE_DB_DATABASE}
 ```
 
 
