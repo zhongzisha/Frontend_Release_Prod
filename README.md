@@ -356,12 +356,5 @@ If you use HERE or HERE101 dataset in your research, please use the following Bi
   url={Submitted},
   year={2024}
 }
-
-
-
-
-
-
-
-
+```
 
