@@ -7,7 +7,7 @@
 
 **HERE website app: https://hereapp.ccr.cancer.gov**
 
-**HERE101 dataset: https://github.com/data2intelligence/HERE101**
+**HERE101 benchmark dataset: https://github.com/data2intelligence/HERE101**
 
 **[Jiang Lab, CDSL, CCR, NCI, NIH](https://ccr.cancer.gov/staff-directory/peng-jiang)**
 
@@ -15,31 +15,20 @@
 
 [[`Paper`](https://ccr.cancer.gov/staff-directory/peng-jiang)] [[`Project`](https://ccr.cancer.gov/staff-directory/peng-jiang)] [[`HERE App`](https://hereapp.ccr.cancer.gov/)] [[`HERE101 Dataset`](https://github.com/data2intelligence/HERE101)] [[`BibTeX`](#citing-here-paper)]
 
+# Abstract
+
 Hematoxylin and Eosin staining (H&E) is widely used in clinical practice, but efficient and versatile Google-like image retrieval tools are lacking. We developed the H&E Retrieval Engine (HERE, https://hereapp.ccr.cancer.gov) to analyze patient cases based on image similarities to database records. Using H&E image regions as input, HERE searches 21.2 terabytes of whole-slide images from multiple tumor histopathology cohorts through a 12.1-gigabyte memory index, and returns top images containing regions similar to the query. HERE scans high-resolution images in the database using accurate artificial intelligence encoding and ultra-efficient hierarchical skip indexing. HERE demonstrated performance superior to existing image retrieval tools based on blinded pathologist scoring using benchmark queries that represent key image features of human tumors. By pairing spatial transcriptomics with H&E images, HERE also enables retrieving image features from gene transcriptomics input and identifies molecular pathways associated with tumor histologies.
 
 ![HERE](Fig1.jpg?raw=true)
 
-Overview
-Abstract with an illustration.
-Components of the HERE project
-HERE website
-GitHub training module 
-Github website source code
-HERE 101 benchmark dataset
+# Setting up the HERE server 
 
-Setting up the HERE server
-Prerequisite
-Apache server configuration
-Data transfer
-Server and database setup
+* [1. Prerequisite](#sec1)
+* [2. Apache server configuration](#sec2)
+* [3. Data transfer](#sec3)
+* [4. Server and database setup](#sec4)
 
-Citation
-
-
-
-# Setting up the HERE server
-
-## Prerequisite
+<h2 id="sec1">1. Prerequisite</h2>
 
 To deploy the HERE website on a Linux server, we need to install a web server and the necessary libraries and softwares (e.g., Apache Httpd server, MySQL database, Python environment, etc.). If you're unfamiliar with these concepts, please search on Google or ask ChatGPT for more information.
 
@@ -119,8 +108,10 @@ sudo yum install -y \
 ```
 
 ### Install OpenSSL 1.1.1
+
+```bash
 # ImportError: urllib3 v2 only supports OpenSSL 1.1.1+, currently the 'ssl' module is compiled with 'OpenSSL 1.0.2k-fips  26 Jan 2017'. See: https://github.com/urllib3/urllib3/issues/2168
-```
+
 cd $HERE_DEPS_TMP
 wget https://github.com/openssl/openssl/releases/download/OpenSSL_1_1_1s/openssl-1.1.1s.tar.gz
 tar -xvf openssl-1.1.1s.tar.gz
@@ -179,7 +170,10 @@ fi
 cd ${WEB_ROOT} && pip3 install -r requirements.txt
 ```
 
-## Apache server configuration
+
+<h2 id="sec2">2. Apache server configuration</h2>
+
+
 
 ### Install mod_wsgi module for Apache httpd server (skip if installed)
 ```bash
@@ -260,7 +254,8 @@ cd ${WEB_ROOT}
 ln -sf ${DST_DATA_ROOT} data_HiDARE_PLIP_20240208
 ```
 
-## Data Transfer
+<h2 id="sec3">3. Data Transfer</h2>
+
 
 ### Set environment variables in case you don't set them
 ```bash
@@ -316,7 +311,8 @@ unzip ${DST_DATA_ROOT}/ST_processed_data.zip -d ${DST_DATA_ROOT}/assets/ST_kmean
 ln -sf ${DST_DATA_ROOT}/assets/ST_kmeans_clustering/big_images ${DST_DATA_ROOT}/ST_big_images
 ```
 
-## Server and database setup
+<h2 id="sec4">4. Server and database setup</h2>
+
 
 ### Setup the MySQL server
 Please run the following command to import HERE database to the MySQL database.
