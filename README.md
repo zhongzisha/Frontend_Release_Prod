@@ -23,6 +23,8 @@ Hematoxylin and Eosin staining (H&E) is widely used in clinical practice, but ef
 
 # Setting up the HERE server 
 
+To deploy the HERE website on a Linux server, we need to install a web server and the necessary libraries and softwares (e.g., Apache Httpd server, MySQL database, Python environment, etc.). If you're unfamiliar with these concepts, please search on Google or ask ChatGPT for more information.
+
 * [1. Prerequisite](#sec1)
 * [2. Apache server configuration](#sec2)
 * [3. Data transfer](#sec3)
@@ -30,11 +32,11 @@ Hematoxylin and Eosin staining (H&E) is widely used in clinical practice, but ef
 
 <h2 id="sec1">1. Prerequisite</h2>
 
-To deploy the HERE website on a Linux server, we need to install a web server and the necessary libraries and softwares (e.g., Apache Httpd server, MySQL database, Python environment, etc.). If you're unfamiliar with these concepts, please search on Google or ask ChatGPT for more information.
+1.1 Directory structure and set the common environmental variables
 
-### Directory structure and set the common environmental variables
-
-First, we need to create some directories and set some environmental variables on the server. You can can the following commands one by one in your bash terminal. You should understand the meaning of each line, and modify it according to your server configuration. Those lines starting with `#` are comments, you can ignore them. The root permission is necessary to setup the server.  
+First, we need to create some directories and set environment variables on the server. You can run the following commands one by one in your Bash terminal. Make sure you understand the purpose of each line and modify them as needed based on your server configuration.
+Lines starting with `#` are comments and can be ignored.
+Root privileges are required to set up the server.
 
 ```bash
 ##########################################################################
@@ -67,7 +69,7 @@ export LD_LIBRARY_PATH=${HERE_DEPS_INSTALL}/lib64:${HERE_DEPS_INSTALL}/lib:$LD_L
 export PKG_CONFIG_PATH=${HERE_DEPS_INSTALL}/lib64/pkgconfig:${HERE_DEPS_INSTALL}/lib/pkgconfig:$PKG_CONFIG_PATH
 ```
 
-### Add the following environmental variables into your bash profile (~/.bashrc)
+1.2 Add the following environmental variables into your bash profile (~/.bashrc)
 
 ```
 export HERE_DB_USER="hidare_app"
@@ -77,7 +79,7 @@ export HERE_DB_DATABASE="hidare"
 ```
 
 
-### Install dependency libraries on CentOS 7
+1.3 Install dependency libraries on CentOS 7
 
 ```bash
 # Install packages on CentOS Linux release 7.9.2009 (Core)
@@ -107,7 +109,7 @@ sudo yum install -y \
 # db4-devel openslide-devel openslide
 ```
 
-### Install OpenSSL 1.1.1
+1.4 Install OpenSSL 1.1.1
 
 ```bash
 # ImportError: urllib3 v2 only supports OpenSSL 1.1.1+, currently the 'ssl' module is compiled with 'OpenSSL 1.0.2k-fips  26 Jan 2017'. See: https://github.com/urllib3/urllib3/issues/2168
@@ -121,7 +123,7 @@ make
 make install
 ```
 
-### Install MySQL
+1.5 Install MySQL
 ```bash
 cd $HERE_DEPS_TMP
 curl -sSLO https://dev.mysql.com/get/mysql84-community-release-el7-1.noarch.rpm
@@ -131,7 +133,7 @@ sudo yum install -y mysql-server
 sudo systemctl start mysqld
 ```
 
-### Install Python-3.9.18
+1.6 Install Python-3.9.18
 ```bash
 # Compile Python (skip if already installed)
 cd ${HERE_DEPS_TMP}
@@ -144,7 +146,7 @@ make
 make install
 ```
 
-### Install Python virtual environment
+1.7 Install Python virtual environment
 ```bash
 # Virtual environment
 cd ${APP_ROOT}
@@ -153,7 +155,7 @@ virtualenv -p python3.9 venv
 source ${APP_ROOT}/venv/bin/activate   # important
 ```
 
-### Clone HERE_website github repository
+1.8 Clone HERE_website github repository
 ```bash
 ## clone HERE_website
 if [ -d ${WEB_ROOT} ]; then rm -rf ${WEB_ROOT}; fi
@@ -164,7 +166,7 @@ else
 fi
 ```
 
-### Install Python libraries in virtual environment
+1.9 Install Python libraries in virtual environment
 ```bash
 # install python packages
 cd ${WEB_ROOT} && pip3 install -r requirements.txt
@@ -175,7 +177,7 @@ cd ${WEB_ROOT} && pip3 install -r requirements.txt
 
 
 
-### Install mod_wsgi module for Apache httpd server (skip if installed)
+2.1 Install mod_wsgi module for Apache httpd server
 ```bash
 # Compile mod_wsgi (need root), skip if already installed
 cd ${HERE_DEPS_TMP}
@@ -190,7 +192,7 @@ sudo make install
 sudo chmod 755 /usr/lib64/httpd/modules/mod_wsgi.so	# important
 ```
 
-### Modify Apache httpd server configuration according to the environmental variables
+2.2 Modify Apache httpd server configuration according to the environmental variables
 ```bash
 # modify /etc/httpd/conf/httpd.conf
 echo """
@@ -225,7 +227,7 @@ echo """
 """ | sudo tee -a /etc/httpd/conf/httpd.conf
 ```
 
-### Enable mod_wsgi module in Apache httpd server
+2.3 Enable mod_wsgi module in Apache httpd server
 ```bash
 # add the following to /etc/httpd/conf.modules.d/10-wsgi.conf
 <IfModule !wsgi_module>
@@ -234,7 +236,7 @@ echo """
 ```
 
 
-### Generate files according to the environment variables
+2.4 Generate files according to the environment variables
 ```bash
 # generate wsgi.py
 cd ${WEB_ROOT}
@@ -257,7 +259,7 @@ ln -sf ${DST_DATA_ROOT} data_HiDARE_PLIP_20240208
 <h2 id="sec3">3. Data Transfer</h2>
 
 
-### Set environment variables in case you don't set them
+3.1 Set environment variables in case you don't set them
 ```bash
 ##########################################################################
 # Directory structures:
@@ -288,20 +290,21 @@ export SRC_HOST=helix.nih.gov:
 export DST_HOST=
 ```
 
-### Copy data and decompress data
+3.2 Copy data and decompress data
+
 ```bash
-########################### copy data processing scripts to the web server ###################
+# copy data processing scripts to the web server
 rsync -avh \
    ${SRC_HOST}/data/Jiang_Lab/Data/Zisha_Zhong/temp_20240208_hidare/deployment_scripts \
    ${DST_HOST}${APP_ROOT}/
 
 
-########################## copy image data ############################
-# copy data
+# copy assets data 
 rsync -avhrv \
    ${SRC_HOST}/data/Jiang_Lab/Data/Zisha_Zhong/HERE_website_assets/* \
    ${DST_HOST}${DST_DATA_ROOT}/
-# decompress data
+
+# decompress data (this will take a few days)
 bash ${APP_ROOT}/deployment_scripts/unzip_files.sh ${DST_DATA_ROOT}/NCIData_big_images/
 bash ${APP_ROOT}/deployment_scripts/unzip_files.sh ${DST_DATA_ROOT}/TCGA-COMBINED_big_images/
 bash ${APP_ROOT}/deployment_scripts/unzip_files.sh ${DST_DATA_ROOT}/CPTAC_big_images/
@@ -314,13 +317,15 @@ ln -sf ${DST_DATA_ROOT}/assets/ST_kmeans_clustering/big_images ${DST_DATA_ROOT}/
 <h2 id="sec4">4. Server and database setup</h2>
 
 
-### Setup the MySQL server
+4.1 Setup the MySQL server
+
 Please run the following command to import HERE database to the MySQL database.
 ```bash
 # create HERE database in MySQL
 mysql -u root -p
 mysql> create database ${HERE_DB_DATABASE};
 mysql> exit;
+
 # import data
 cd ${WEB_ROOT}
 python add_data_to_mysql.py  
@@ -328,7 +333,8 @@ python add_data_to_mysql.py
 # mysql --host=${HERE_DB_HOST} --user=${HERE_DB_USER} --password=${HERE_DB_PASSWORD} ${HERE_DB_DATABASE}
 ```
 
-### Start the web server
+4.2 Start the web server
+
 Please run the following command to start HERE web app on the server.
 
 ```bash
