@@ -19,16 +19,33 @@ Hematoxylin and Eosin staining (H&E) is widely used in clinical practice, but ef
 
 ![HERE](Fig1.jpg?raw=true)
 
+Overview
+Abstract with an illustration.
+Components of the HERE project
+HERE website
+GitHub training module 
+Github website source code
+HERE 101 benchmark dataset
+
+Setting up the HERE server
+Prerequisite
+Apache server configuration
+Data transfer
+Server and database setup
+
+Citation
+
+
 
 # Setting up the HERE server
 
-## 1. Prerequisite
+## Prerequisite
 
 To deploy the HERE website on a Linux server, we need to install a web server and the necessary libraries and softwares (e.g., Apache Httpd server, MySQL database, Python environment, etc.). If you're unfamiliar with these concepts, please search on Google or ask ChatGPT for more information.
 
 ### Directory structure and set the common environmental variables
 
-First, we need to create some directories and set some environmental variables on the server.
+First, we need to create some directories and set some environmental variables on the server. You can can the following commands one by one in your bash terminal. You should understand the meaning of each line, and modify it according to your server configuration. Those lines starting with `#` are comments, you can ignore them. The root permission is necessary to setup the server.  
 
 ```bash
 ##########################################################################
@@ -44,22 +61,30 @@ First, we need to create some directories and set some environmental variables o
 #           disk1/
 #               HERE_assets/                    # Please make sure that the disk1 has 3TB+ free space
 ##########################################################################
-APP_ROOT=/local/NCI_HERE_app                    # app root (CHANGE THIS)
-WEB_ROOT=${APP_ROOT}/website                    # website root (CHANGE THIS)
-HERE_DEPS_INSTALL=${APP_ROOT}/install           # dependencies installed
-HERE_DEPS_TMP=${APP_ROOT}/tmp                   # dependencies source, build, etc.
-DST_DATA_ROOT=/mnt/hidare-efs/data/HERE_assets      # data assets, e.g., images (3TB+ free space)
-APP_USERNAME=zhongz2				  # CHANGE THIS
+APP_ROOT=/local/NCI_HERE_app                       # app root (CHANGE THIS)
+WEB_ROOT=${APP_ROOT}/website                       # website root 
+HERE_DEPS_INSTALL=${APP_ROOT}/install              # dependencies installed
+HERE_DEPS_TMP=${APP_ROOT}/tmp                      # dependencies source, build, etc.
+DST_DATA_ROOT=/mnt/hidare-efs/data/HERE_assets     # data assets, e.g., images (3TB+ free space)
+APP_USERNAME=zhongz2				                     # CHANGE THIS
 ##########################################################################
 # please make sure the operating user can read and write these directories on the web server (skip if already existed)
 sudo mkdir -p ${DST_DATA_ROOT}/temp_images_dir ${DST_DATA_ROOT}/assets/ST_kmeans_clustering ${APP_ROOT} ${HERE_DEPS_INSTALL} ${HERE_DEPS_TMP}
-sudo chown ${APP_USERNAME}:${APP_USERNAME} -R ${APP_ROOT} ${HERE_DEPS_INSTALL} ${HERE_DEPS_TMP}  # optional
-sudo chown ${APP_USERNAME}:${APP_USERNAME} -R ${DST_DATA_ROOT}						   # optional
-
+sudo chown ${APP_USERNAME}:${APP_USERNAME} -R ${APP_ROOT} ${HERE_DEPS_INSTALL} ${HERE_DEPS_TMP}
+sudo chown ${APP_USERNAME}:${APP_USERNAME} -R ${DST_DATA_ROOT}						   
 
 export PATH=${HERE_DEPS_INSTALL}/bin:$PATH
 export LD_LIBRARY_PATH=${HERE_DEPS_INSTALL}/lib64:${HERE_DEPS_INSTALL}/lib:$LD_LIBRARY_PATH
 export PKG_CONFIG_PATH=${HERE_DEPS_INSTALL}/lib64/pkgconfig:${HERE_DEPS_INSTALL}/lib/pkgconfig:$PKG_CONFIG_PATH
+```
+
+### Add the following environmental variables into your bash profile (~/.bashrc)
+
+```
+export HERE_DB_USER="hidare_app"
+export HERE_DB_PASSWORD="your password"           # change this
+export HERE_DB_HOST="your mysql database host"    # change this
+export HERE_DB_DATABASE="hidare"
 ```
 
 
@@ -91,9 +116,11 @@ sudo yum install -y \
    openssl-devel tk-devel libffi-devel xz-devel gdbm-devel ncurses-devel \
    wget git
 # db4-devel openslide-devel openslide
+```
 
-# install OpenSSL 1.1.1
-ImportError: urllib3 v2 only supports OpenSSL 1.1.1+, currently the 'ssl' module is compiled with 'OpenSSL 1.0.2k-fips  26 Jan 2017'. See: https://github.com/urllib3/urllib3/issues/2168
+### Install OpenSSL 1.1.1
+# ImportError: urllib3 v2 only supports OpenSSL 1.1.1+, currently the 'ssl' module is compiled with 'OpenSSL 1.0.2k-fips  26 Jan 2017'. See: https://github.com/urllib3/urllib3/issues/2168
+```
 cd $HERE_DEPS_TMP
 wget https://github.com/openssl/openssl/releases/download/OpenSSL_1_1_1s/openssl-1.1.1s.tar.gz
 tar -xvf openssl-1.1.1s.tar.gz
@@ -103,7 +130,7 @@ make
 make install
 ```
 
-### Install MySQL (skip if installed)
+### Install MySQL
 ```bash
 cd $HERE_DEPS_TMP
 curl -sSLO https://dev.mysql.com/get/mysql84-community-release-el7-1.noarch.rpm
@@ -113,7 +140,7 @@ sudo yum install -y mysql-server
 sudo systemctl start mysqld
 ```
 
-### Install Python-3.9.18 (skip if installed)
+### Install Python-3.9.18
 ```bash
 # Compile Python (skip if already installed)
 cd ${HERE_DEPS_TMP}
@@ -151,6 +178,8 @@ fi
 # install python packages
 cd ${WEB_ROOT} && pip3 install -r requirements.txt
 ```
+
+## Apache server configuration
 
 ### Install mod_wsgi module for Apache httpd server (skip if installed)
 ```bash
@@ -217,9 +246,10 @@ echo """
 cd ${WEB_ROOT}
 cat > wsgi.py << EOL
 #!${APP_ROOT}/venv/bin/python
+import os
 os.environ['HERE_DB_USER'] = "hidare_app"
-os.environ['HERE_DB_PASSWORD'] = "your password"
-os.environ['HERE_DB_HOST'] = "your server"
+os.environ['HERE_DB_PASSWORD'] = "your password"  # change this
+os.environ['HERE_DB_HOST'] = "your server"    # change this
 os.environ['HERE_DB_DATABASE'] = "hidare"
 from app import app as application
 EOL
@@ -230,11 +260,7 @@ cd ${WEB_ROOT}
 ln -sf ${DST_DATA_ROOT} data_HiDARE_PLIP_20240208
 ```
 
-## 2. Copy the website code from the Github repository
-https://github.com/data2intelligence/HERE_website
-
-## 3. Copy files from NIH Helix node
-All data saved in NIH Helix node, please run the following commands from the web server node
+## Data Transfer
 
 ### Set environment variables in case you don't set them
 ```bash
@@ -290,8 +316,9 @@ unzip ${DST_DATA_ROOT}/ST_processed_data.zip -d ${DST_DATA_ROOT}/assets/ST_kmean
 ln -sf ${DST_DATA_ROOT}/assets/ST_kmeans_clustering/big_images ${DST_DATA_ROOT}/ST_big_images
 ```
 
+## Server and database setup
 
-## Establish PROD database from dump file
+### Setup the MySQL server
 Please run the following command to import HERE database to the MySQL database.
 ```bash
 # create HERE database in MySQL
@@ -299,23 +326,20 @@ mysql -u root -p
 mysql> create database ${HERE_DB_DATABASE};
 mysql> exit;
 # import data
+cd ${WEB_ROOT}
 python add_data_to_mysql.py  
 
 # mysql --host=${HERE_DB_HOST} --user=${HERE_DB_USER} --password=${HERE_DB_PASSWORD} ${HERE_DB_DATABASE}
 ```
 
-
-
-
-## Start the server and HERE web app
+### Start the web server
 Please run the following command to start HERE web app on the server.
 
 ```bash
 sudo setenforce 0                   # disable SELinux temporarily, or go to /etc/selinux/config, disable it forever
 sudo systemctl restart httpd                  
-
 ```
-and then check the /var/log/httpd/error_log for Apache httpd log.
+and then check the /var/log/httpd/error_log for Apache httpd log. Then you can open the website in your web browser.
 
 
 ## Citing HERE
